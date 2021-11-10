@@ -5,8 +5,23 @@ var meteors;
 
 function startGame() {
   myGameArea.start();
-  myGamePiece = new component(50, 50, "res/ship.png", 400, 400, "image");
-  meteors = [new component(50, 50, "res/meteor.png", 200, 200, "image"), new component(50, 50, "res/meteor.png", 500, 500, "image")];
+
+  // Create player ship
+  myGamePiece = new component(50, 50, "res/ship.png", 400, 400, 0, 0, "ship");
+
+  // Create meteors with random speed and location
+  meteors = [];
+  for (var i = 0; i < 50; i++) {
+    var _width = Math.random() * myGameArea.canvas.width;
+    var _height = Math.random() * myGameArea.canvas.height;
+
+    var _speed_x = Math.random() * 1 - 0.5;
+    var _speed_y = Math.random() * 1 - 0.5;
+
+    var _meteor = new component(50, 50, "res/meteor.png", _width, _height, _speed_x, _speed_y, "meteor");
+    
+    meteors.push(_meteor);
+  }
 }
 
 var myGameArea = {
@@ -41,21 +56,19 @@ var myGameArea = {
   }
 }
 
-function component(width, height, color, x, y, type) {
+function component(width, height, color, x, y, speed_x, speed_y, type) {
   this.type = type;
 
-  if (type == "image") {
-    this.image = new Image();
-    this.image.src = color;
-  }
+  this.image = new Image();
+  this.image.src = color;
 
   this.gamearea = myGameArea;
   this.width = width;
   this.height = height;
   this.angle = 0 * Math.PI / 180;
   this.trust = 0;
-  this.speedX = 0;
-  this.speedY = 0;
+  this.speedX = speed_x;
+  this.speedY = speed_y;
   this.averageX = 0;
   this.averageY = 0;
   this.x = x;
@@ -96,6 +109,23 @@ function component(width, height, color, x, y, type) {
     this.x += this.speedX;
     this.y += this.speedY;
   }
+
+  this.newPosMeteor = function () {
+    this.averageX = Math.sin(this.angle) * this.trust;
+    this.averageY = -Math.cos(this.angle) * this.trust;
+    this.speedX += this.averageX;
+    this.speedY += this.averageY;
+
+    if (this.y < 0 || this.y > this.gamearea.canvas.height) {
+      this.speedY *= -1;
+    }
+    if (this.x < 0 || this.x > this.gamearea.canvas.width) {
+      this.speedX *= -1;
+    }
+
+    this.x += this.speedX;
+    this.y += this.speedY;
+  }
 }
 
 // Update game tick
@@ -128,13 +158,13 @@ function updateGameArea() {
     }
   }
 
+  // Update player ship
   myGamePiece.newPos();
   myGamePiece.update();
-  meteors[0].newPos();
-  meteors[0].update();
-  meteors[1].newPos();
-  meteors[1].update();
 
-  // for (var meteor in meteors) { meteor.newPos(); }
-  // for (var meteor in meteors) { meteor.update(); }
+  // Update meteors
+  for (var i = 0; i < meteors.length; i++) {
+    meteors[i].newPosMeteor();
+    meteors[i].update();
+  }
 }
