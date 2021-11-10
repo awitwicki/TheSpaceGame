@@ -27,8 +27,9 @@ function startGame() {
 var myGameArea = {
   canvas: document.createElement("canvas"),
   start: function () {
-    this.canvas.width = 1800;
-    this.canvas.height = 900;
+    document.body.innerWidth
+    this.canvas.width = window.innerWidth -2;
+    this.canvas.height = window.innerHeight - 30;
     this.context = this.canvas.getContext("2d");
 
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
