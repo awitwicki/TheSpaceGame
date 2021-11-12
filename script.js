@@ -12,16 +12,21 @@ function startGame() {
 
   // Create meteors with random speed and location
   meteors = [];
-  for (var i = 0; i < 50; i++) {
-    var _width = Math.random() * myGameArea.canvas.width;
-    var _height = Math.random() * myGameArea.canvas.height;
 
+  for (var i = 0; i < 50; i++) {
     var _speed_x = Math.random() * 1 - 0.5;
     var _speed_y = Math.random() * 1 - 0.5;
-
+    
+    var _width = Math.random() * myGameArea.canvas.width;
+    var _height = Math.random() * myGameArea.canvas.height;
     var _meteor = new component(50, 50, "res/meteor.png", _width, _height, _speed_x, _speed_y, "meteor");
-
     meteors.push(_meteor);
+
+    do {
+      meteors[i].x = Math.random() * myGameArea.canvas.width;
+      meteors[i].y = Math.random() * myGameArea.canvas.height;
+    }
+    while (findNearMeteor(i))
   }
 }
 
@@ -93,10 +98,9 @@ function component(width, height, color, x, y, speed_x, speed_y, type) {
       ctx.beginPath();
       ctx.moveTo(this.x, this.y);
       ctx.lineTo(this.x + (this.speedX * 100), this.y + (this.speedY * 100));
+      ctx.strokeStyle = "#00FF00";
+      ctx.stroke();
     }
-
-    ctx.strokeStyle = "#00FF00";
-    ctx.stroke();
 
     ctx.restore();
   }
@@ -152,13 +156,28 @@ function component(width, height, color, x, y, speed_x, speed_y, type) {
         ctx.stroke();
       }
 
+      // Collision by X
       if (this.speedX * _collisionMeteor.speedX < 0) {
         this.speedX *= -1;
         _collisionMeteor.speedX *= -1;
-      } 
+      }
+      // Else swap speeds
+      else {
+        var speedX = this.speedX;
+        this.speedX = _collisionMeteor.speedX;
+        _collisionMeteor.speedX = speedX;
+      }
+
+      // Collision by Y
       if (this.speedY * _collisionMeteor.speedY < 0) {
         this.speedY *= -1;
         _collisionMeteor.speedY *= -1;
+      }
+      // Else swap speeds
+      else {
+        var speedY = this.speedY;
+        this.speedY = _collisionMeteor.speedY;
+        _collisionMeteor.speedY = speedY;
       }
     }
 
@@ -173,7 +192,7 @@ function findNearMeteor(meteorIndex) {
     if (i != meteorIndex) {
       var _distance = Math.sqrt(Math.pow(meteors[i].x - (meteors[meteorIndex].x), 2) + Math.pow(meteors[i].y - meteors[meteorIndex].y, 2));
 
-      if (_distance < 50) {
+      if (_distance < 45) {
         return meteors[i];
       }
     }
