@@ -2,10 +2,30 @@ var ship;
 
 var debugMode = false;
 var meteors;
+var battery;
 
 function startGame() {
   myGameArea.start();
   initGameLevel();
+}
+
+function endGame() {
+  alert("Game over!");
+
+  // Reset game keyboard
+  myGameArea.keys = [];
+  initGameLevel();
+}
+
+// Create battery with random location
+function initBattery() {
+  var _speed_x = Math.random() * 1 - 0.5;
+  var _speed_y = Math.random() * 1 - 0.5;
+
+  var _width = Math.random() * myGameArea.canvas.width;
+  var _height = Math.random() * myGameArea.canvas.height;
+
+  battery = new component(50, 50, "res/battery.png", _width, _height, _speed_x, _speed_y, "battery");
 }
 
 function initGameLevel() {
@@ -32,16 +52,22 @@ function initGameLevel() {
   ship = new component(50, 50, "res/ship.png", 400, 400, 0, 0, "ship");
 
   ship.trust = 0;
+  ship.trustCoefficient = 1;
+  ship.energy = 1000;
   ship.angle = 0;
   ship.speedX = 0;
   ship.speedY = 0;
   ship.averageX = 0;
   ship.averageY = 0;
+
   do {
     ship.x = Math.random() * myGameArea.canvas.width;
     ship.y = Math.random() * myGameArea.canvas.height;
   }
   while (findNearMeteorAboveShip())
+
+  // Create baterry
+  initBattery();
 }
 
 var myGameArea = {
@@ -93,6 +119,9 @@ function component(width, height, color, x, y, speed_x, speed_y, type) {
   this.height = height;
   this.angle = 0 * Math.PI / 180;
   this.trust = 0;
+  this.trustCoefficient = 1;
+  this.energy = 1000;
+  this.level = 1;
   this.speedX = speed_x;
   this.speedY = speed_y;
   this.averageX = 0;
@@ -120,11 +149,22 @@ function component(width, height, color, x, y, speed_x, speed_y, type) {
     if (this.type == "ship") {
       var meteorCollision = findNearMeteorAboveShip();
       if (meteorCollision) {
-        alert("Game over!");
+        endGame();
+      }
+    }
 
-        // Reset game keyboard
-        myGameArea.keys = [];
-        initGameLevel();
+    // Check ship collision with baterry
+    if (this.type == "battery") {
+      var distanceToShip = Math.sqrt(Math.pow(this.x - (ship.x), 2) + Math.pow(this.y - ship.y, 2));
+      if (distanceToShip < 50) {
+        initBattery();
+
+        // Ship bonus
+        if (ship.trustCoefficient < 5) {
+          ship.trustCoefficient *= 1.1;
+          ship.energy += 1000;
+          ship.level += 1;
+        }
       }
     }
 
@@ -132,8 +172,8 @@ function component(width, height, color, x, y, speed_x, speed_y, type) {
   }
 
   this.newPos = function () {
-    this.averageX = Math.sin(this.angle) * this.trust;
-    this.averageY = -Math.cos(this.angle) * this.trust;
+    this.averageX = Math.sin(this.angle) * this.trust * this.trustCoefficient;
+    this.averageY = -Math.cos(this.angle) * this.trust * this.trustCoefficient;;
     this.speedX += this.averageX;
     this.speedY += this.averageY;
 
@@ -281,10 +321,25 @@ function updateGameArea() {
   // Update player ship
   ship.newPos();
   ship.update();
+  ship.energy -= 1;
+
+  if (ship.energy < 0) {
+    endGame();
+  }
+
+  // Update battery
+  battery.update();
+  battery.newPos();
 
   // Update meteors
   for (var i = 0; i < meteors.length; i++) {
     meteors[i].update();
     meteors[i].newPosMeteor(i);
   }
+
+  // Draw ui
+  ctx = myGameArea.context;
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillText("Level: " + ship.level + ", Energy: " + ship.energy, 10, 30);
 }
